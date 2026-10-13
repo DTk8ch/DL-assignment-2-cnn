@@ -1,0 +1,25 @@
+# Local env
+.venv/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+.env
+.env.*
+
+# Kaggle dataset
+data
+
+# Outputs
+checkpoints/
+outputs/
+wandb/
+lightning_logs/
+*.pt
+*.pth
+*.ckpt
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

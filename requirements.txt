@@ -1,0 +1,11 @@
+# Install torch and torchvision separately for your GPU/CPU setup.
+numpy
+pandas
+Pillow
+matplotlib
+scikit-learn
+jupyterlab
+ipykernel
+iterative-stratification
+kaggle
+tqdm
