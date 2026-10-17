@@ -8,7 +8,7 @@ def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument(
-        "--model", "--m",
+        "--mode", "--m",
         type=str,
         default="baseline",
         choices=["baseline", "se", "cbam"],
@@ -36,11 +36,12 @@ def main():
     )
 
     args = get_args()
-    print(f"Active model: {args.model}")
+    mode, checkpoint = args.mode, args.checkpoint
+    print(f"Active model: {args.mode}\n" + "=" * 12)
 
-    model = PetClassifier(pos_weights=pos_weights, lr=1e-4)
-    trainer = setup_trainer(max_epochs=10)
-    trainer.fit(model, train_loader, val_loader, ckpt_path=args.checkpoint)
+    model = PetClassifier(mode=mode, pos_weights=pos_weights, lr=1e-4)
+    trainer = setup_trainer(mode, max_epochs=10)
+    trainer.fit(model, train_loader, val_loader, ckpt_path=checkpoint)
 
 
 if __name__ == "__main__":

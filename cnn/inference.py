@@ -61,7 +61,7 @@ def run_inference(ckpt_path, test_csv_path, img_dir, output_csv):
 
     print("Running forward passes...")
 
-    optimal_thresholds = torch.tensor([0.51, 0.50, 0.73, 0.97, 0.82], device=device)
+    optimal_thresholds = torch.tensor([0.75, 0.29, 0.89, 0.99, 0.97], device=device)
 
     with torch.no_grad():
         for images, batch_img_ids in test_loader:
