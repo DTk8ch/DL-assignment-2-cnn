@@ -58,6 +58,14 @@ class PetClassifier(pl.LightningModule):
         return {"optimizer": optimizer, "lr_scheduler": scheduler}
 
 
+    def threshold_optimizer(self, val_loader):
+        with torch.no_grad():
+            for i in (0, 5):
+                for images, batch_img_ids in val_loader:
+                    images = images.to(device)
+
+
+
 def setup_trainer(max_epochs=10):
     wandb_logger = WandbLogger(
         project="AI301_Assignment2",
@@ -66,6 +74,7 @@ def setup_trainer(max_epochs=10):
     )
 
     checkpoint_callback = ModelCheckpoint(
+        dirpath="checkpoints/",
         monitor="val_macro_f1",
         mode="max",
         save_top_k=1,

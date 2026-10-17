@@ -70,7 +70,18 @@ def get_dataloaders(fold_idx=0, batch_size=32, num_workers=4):
     train_dataset = CatsDogsDataset(train_df, img_dir, train_transform)
     val_dataset = CatsDogsDataset(val_df, img_dir, val_transform)
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=batch_size,
+        shuffle=True,
+        num_workers=num_workers,
+        persistent_workers=True)
+
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=num_workers,
+        persistent_workers=True)
 
     return train_loader, val_loader, pos_weights
