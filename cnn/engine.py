@@ -3,7 +3,6 @@ import torch.nn as nn
 import lightning.pytorch as pl
 import timm
 import torchmetrics
-from lightning.pytorch.loggers import WandbLogger
 from lightning.pytorch.callbacks import ModelCheckpoint, EarlyStopping
 
 
@@ -77,12 +76,12 @@ class CBAMBlock(nn.Module):
 
 
 class PetClassifier(pl.LightningModule):
-    def __init__(self, mode="baseline", pos_weights=None, lr=1e-4):
+    def __init__(self, mode="baseline", pos_weights=None, lr=1e-4, pretrained=True):
         super().__init__()
         self.save_hyperparameters(ignore=['pos_weights'])
         self.lr = lr
 
-        self.backbone = timm.create_model("resnet34", pretrained=True)
+        self.backbone = timm.create_model("resnet34", pretrained=pretrained)
 
         if mode == "baseline":
             self.attention = nn.Identity()
@@ -143,6 +142,9 @@ class PetClassifier(pl.LightningModule):
         for i, class_name in enumerate(classes):
             self.log(f'val_f1_{class_name}', per_class_f1[i])
 
+        # Give the three rare identity classes their own equally weighted score.
+        self.log('val_rare_macro_f1', per_class_f1[2:].mean())
+
         self.val_f1_per_class.reset()
 
     def configure_optimizers(self):
@@ -152,6 +154,8 @@ class PetClassifier(pl.LightningModule):
 
 
 def setup_trainer(mode, max_epochs=10):
+    from lightning.pytorch.loggers import WandbLogger
+
     wandb_logger = WandbLogger(
         project="AI301_Assignment2",
         name=f"resnet34_{mode}_fold0",

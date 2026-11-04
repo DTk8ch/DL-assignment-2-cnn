@@ -1,4 +1,8 @@
 # Install torch and torchvision separately for your GPU/CPU setup.
+timm
+lightning
+torchmetrics
+wandb
 numpy
 pandas
 Pillow

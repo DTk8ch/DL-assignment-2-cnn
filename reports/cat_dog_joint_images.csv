@@ -1,0 +1,14 @@
+subset,image_id,Cat,Dog,Moris,Motya,Biatrix,image_path
+train_true,77b1acacf40360eb46c9c9657f0d688312c80fa2,1,1,1,0,1,D:\ai_lab_2\DL-assignment-2-cnn\data\train\77b1acacf40360eb46c9c9657f0d688312c80fa2.jpg
+train_true,c237a26dea8742fc7188dc964b1e7180a44edd39,1,1,1,0,1,D:\ai_lab_2\DL-assignment-2-cnn\data\train\c237a26dea8742fc7188dc964b1e7180a44edd39.jpg
+train_true,f7fb413b68eb24046bd31a9ae0e25443d5380b68,1,1,1,0,1,D:\ai_lab_2\DL-assignment-2-cnn\data\train\f7fb413b68eb24046bd31a9ae0e25443d5380b68.jpg
+train_true,211f239cd9680be1ddc8375c08010e4a1d99ffeb,1,1,1,0,1,D:\ai_lab_2\DL-assignment-2-cnn\data\train\211f239cd9680be1ddc8375c08010e4a1d99ffeb.jpg
+test_submitted_prediction,fc1466b6c743ded9e160d9b381709f0d02e6c5ef,1,1,0,0,0,D:\ai_lab_2\DL-assignment-2-cnn\data\test\fc1466b6c743ded9e160d9b381709f0d02e6c5ef.jpg
+test_submitted_prediction,da5b999737c46ecd25e8cd69d1a2c58013cfa33d,1,1,0,0,0,D:\ai_lab_2\DL-assignment-2-cnn\data\test\da5b999737c46ecd25e8cd69d1a2c58013cfa33d.jpg
+test_submitted_prediction,cc111903c4308c9b972d1c438ab6564209484a5d,1,1,0,0,0,D:\ai_lab_2\DL-assignment-2-cnn\data\test\cc111903c4308c9b972d1c438ab6564209484a5d.jpg
+test_submitted_prediction,1fb922e8f4954872f53386ebc5cba14260f8f1cb,1,1,0,0,0,D:\ai_lab_2\DL-assignment-2-cnn\data\test\1fb922e8f4954872f53386ebc5cba14260f8f1cb.jpg
+test_submitted_prediction,c4e54e2c101919b9c7567ee83e932af3d557a3d4,1,1,0,0,0,D:\ai_lab_2\DL-assignment-2-cnn\data\test\c4e54e2c101919b9c7567ee83e932af3d557a3d4.jpg
+test_submitted_prediction,a3d2a5f413414bc6b4b7fa8e4604e3b8faf557fa,1,1,0,0,0,D:\ai_lab_2\DL-assignment-2-cnn\data\test\a3d2a5f413414bc6b4b7fa8e4604e3b8faf557fa.jpg
+test_submitted_prediction,fc211a67adf09d0fd83486716462756ffb3a099e,1,1,0,0,0,D:\ai_lab_2\DL-assignment-2-cnn\data\test\fc211a67adf09d0fd83486716462756ffb3a099e.jpg
+test_submitted_prediction,caaebffec9fb15464dbc935ea1c9df85bb6831a4,1,1,0,0,0,D:\ai_lab_2\DL-assignment-2-cnn\data\test\caaebffec9fb15464dbc935ea1c9df85bb6831a4.jpg
+test_submitted_prediction,e0d3d1539e30f8e3fa02c0992f9034676caed2b9,1,1,0,0,0,D:\ai_lab_2\DL-assignment-2-cnn\data\test\e0d3d1539e30f8e3fa02c0992f9034676caed2b9.jpg

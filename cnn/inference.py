@@ -8,6 +8,7 @@ import argparse
 import datetime
 
 from engine import PetClassifier
+from constraints import apply_label_constraints
 
 
 class CatsDogsTestDataset(Dataset):
@@ -36,7 +37,7 @@ class CatsDogsTestDataset(Dataset):
         return image, row['image_id']
 
 
-def run_inference(ckpt_path, test_csv_path, img_dir, output_csv):
+def run_inference(ckpt_path, test_csv_path, img_dir, output_csv, constraints=False):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f"Running inference on: {device}")
 
@@ -71,10 +72,15 @@ def run_inference(ckpt_path, test_csv_path, img_dir, output_csv):
 
             probs = torch.sigmoid(logits)
 
-            probs_interpreted = (probs >= optimal_thresholds).int()
+            if constraints:
+                probs_interpreted = apply_label_constraints(
+                    probs.cpu().numpy(), optimal_thresholds.cpu().numpy()
+                )
+            else:
+                probs_interpreted = (probs >= optimal_thresholds).int().cpu().numpy()
 
             image_ids.extend(batch_img_ids)
-            all_predictions.extend(probs_interpreted.cpu().numpy())
+            all_predictions.extend(probs_interpreted)
 
     print("Formatting submission...")
     labels = ["Cat", "Dog", "Moris", "Motya", "Biatrix"]
@@ -94,6 +100,10 @@ def get_args():
         type=str,
         required=True
     )
+    parser.add_argument(
+        '--constraints', action='store_true',
+        help='Apply Cat/Biatrix, Dog/Moris/Motya, and Moris/Motya exclusion rules'
+    )
 
     return parser.parse_args()
 
@@ -109,4 +119,5 @@ if __name__ == "__main__":
 
     SUBMISSION_FILE = f"submissions/submission_optimized_{timestamp}.csv"
 
-    run_inference(CKPT_FILE, TEST_CSV, TEST_IMG_DIR, SUBMISSION_FILE)
+    run_inference(CKPT_FILE, TEST_CSV, TEST_IMG_DIR, SUBMISSION_FILE,
+                  constraints=args.constraints)
