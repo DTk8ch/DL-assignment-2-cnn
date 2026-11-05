@@ -24,6 +24,21 @@ def get_args():
         help="Specify the checkpoint to be start from (default: None) "
     )
 
+    parser.add_argument(
+        "--optimizer_pair", "--pair",
+        type=str,
+        default="radam_plateau",
+        choices=["radam_plateau", "sgd_onecycle", "adamw_cosine"],
+        required=False
+    )
+
+    parser.add_argument(
+        "--lr",
+        type=float,
+        default=None,
+        required=False
+    )
+
     return parser.parse_args()
 
 
@@ -36,11 +51,12 @@ def main():
     )
 
     args = get_args()
-    mode, checkpoint = args.mode, args.checkpoint
-    print(f"Active model: {args.mode}\n" + "=" * 12)
+    mode, checkpoint, pair = args.mode, args.checkpoint, args.optimizer_pair
+    lr = args.lr if args.lr is not None else (1e-2 if pair == "sgd_onecycle" else 1e-4)
+    print(f"Active model: {mode} | Optimizer pair: {pair} | LR: {lr}\n" + "=" * 12)
 
-    model = PetClassifier(mode=mode, pos_weights=pos_weights, lr=1e-4)
-    trainer = setup_trainer(mode, max_epochs=10)
+    model = PetClassifier(mode=mode, pos_weights=pos_weights, lr=lr, optimizer_pair=pair)
+    trainer = setup_trainer(mode, optimizer_pair=pair, max_epochs=10)
     trainer.fit(model, train_loader, val_loader, ckpt_path=checkpoint)
 
 

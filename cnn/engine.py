@@ -77,10 +77,11 @@ class CBAMBlock(nn.Module):
 
 
 class PetClassifier(pl.LightningModule):
-    def __init__(self, mode="baseline", pos_weights=None, lr=1e-4):
+    def __init__(self, mode="baseline", pos_weights=None, lr=1e-4, optimizer_pair="radam_plateau"):
         super().__init__()
         self.save_hyperparameters(ignore=['pos_weights'])
         self.lr = lr
+        self.optimizer_pair = optimizer_pair
 
         self.backbone = timm.create_model("resnet34", pretrained=True)
 
@@ -145,16 +146,58 @@ class PetClassifier(pl.LightningModule):
 
         self.val_f1_per_class.reset()
 
+    def on_before_optimizer_step(self, optimizer):
+        if self.global_step % 10 == 0:
+            block_norms = {}
+            for name, param in self.named_parameters():
+                if param.grad is not None:
+                    norm = param.grad.detach().norm(2).item()
+                    for block in ["head", "attention", "layer4", "layer3", "layer2", "layer1"]:
+                        if block in name:
+                            block_norms.setdefault(block, []).append(norm)
+                            break
+            for block, norms in block_norms.items():
+                self.log(f"grad_flow/{block}", sum(norms) / len(norms), on_step=True)
+
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.hparams.lr, weight_decay=1e-4)
-        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
-        return {"optimizer": optimizer, "lr_scheduler": scheduler}
+        if self.optimizer_pair == "radam_plateau":
+            optimizer = torch.optim.RAdam(self.parameters(), lr=self.lr, weight_decay=1e-4)
+            scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+                optimizer, mode="max", factor=0.5, patience=2, min_lr=1e-6
+            )
+            return {
+                "optimizer": optimizer,
+                "lr_scheduler": {
+                    "scheduler": scheduler,
+                    "monitor": "val_macro_f1"
+                }
+            }
+        elif self.optimizer_pair == "sgd_onecycle":
+            optimizer = torch.optim.SGD(
+                self.parameters(), lr=self.lr, momentum=0.9, nesterov=True, weight_decay=1e-4
+            )
+            scheduler = torch.optim.lr_scheduler.OneCycleLR(
+                optimizer,
+                max_lr=self.lr,
+                total_steps=self.trainer.estimated_stepping_batches
+            )
+            return {
+                "optimizer": optimizer,
+                "lr_scheduler": {
+                    "scheduler": scheduler,
+                    "interval": "step"
+                }
+            }
+        else:
+            optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr, weight_decay=1e-4)
+            scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10)
+            return {"optimizer": optimizer, "lr_scheduler": scheduler}
 
 
-def setup_trainer(mode, max_epochs=10):
+def setup_trainer(mode, optimizer_pair="radam_plateau", max_epochs=10):
     wandb_logger = WandbLogger(
         project="AI301_Assignment2",
-        name=f"resnet34_{mode}_fold0",
+        name=f"resnet34_{mode}_{optimizer_pair}_fold0",
         log_model="all"
     )
 
