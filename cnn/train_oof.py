@@ -1,9 +1,3 @@
-"""Train a fold-specific ResNet34 attention model and cache OOF/test probabilities.
-
-The fold named by --fold is excluded from training. Existing fold-0
-checkpoints came from earlier experiments; this script trains folds 1-4.
-"""
-
 import argparse
 import os
 from pathlib import Path
@@ -21,7 +15,8 @@ from torchvision import transforms
 
 from engine import PetClassifier
 from ensemble import TestImages, predict
-from loader import CatsDogsDataset
+from loader import CatsDogsDataset, load_train_folds
+from near_duplicate_audit import sha256
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -29,6 +24,11 @@ LABELS = ["Cat", "Dog", "Moris", "Motya", "Biatrix"]
 
 
 class EpochLog(Callback):
+    def on_save_checkpoint(self, trainer, pl_module, checkpoint):
+        checkpoint["split_sha256"] = trainer.split_sha256
+        checkpoint["training_ids"] = trainer.training_ids
+        checkpoint["validation_ids"] = trainer.validation_ids
+
     def on_validation_epoch_end(self, trainer, model):
         if trainer.sanity_checking:
             return
@@ -39,20 +39,25 @@ class EpochLog(Callback):
 
 
 def train_one(fold, mode, args):
+    data = load_train_folds()
+    split_hash = sha256(ROOT / "folds.csv")
+    train = data.loc[data.fold.ne(fold)].reset_index(drop=True)
+    val = data.loc[data.fold.eq(fold)].reset_index(drop=True)
     out = args.output_dir / f"{mode}_fold{fold}"
     out.mkdir(parents=True, exist_ok=True)
     probabilities_file = out / "probabilities.npz"
     if probabilities_file.exists():
+        with np.load(probabilities_file) as cached:
+            if ("split_sha256" not in cached.files or cached["split_sha256"].item() != split_hash or
+                    "training_ids" not in cached.files or
+                    not np.array_equal(cached["training_ids"], train.image_id.to_numpy(dtype=str)) or
+                    not np.array_equal(cached["validation_ids"], val.image_id.to_numpy(dtype=str))):
+                raise ValueError("Cached OOF uses a different split; choose a new --output-dir")
         print(f"Reusing completed {mode} fold {fold}", flush=True)
         return
 
     pl.seed_everything(42 + fold, workers=True)
     torch.set_float32_matmul_precision("medium")
-    data = pd.read_csv(ROOT / "data" / "train.csv").merge(
-        pd.read_csv(ROOT / "folds.csv"), on="image_id", validate="one_to_one"
-    )
-    train = data.loc[data.fold.ne(fold)].reset_index(drop=True)
-    val = data.loc[data.fold.eq(fold)].reset_index(drop=True)
     test = pd.read_csv(ROOT / "data" / "test.csv")
     norm = transforms.Normalize([.485, .456, .406], [.229, .224, .225])
     val_transform = transforms.Compose([
@@ -85,6 +90,9 @@ def train_one(fold, mode, args):
         enable_progress_bar=False, log_every_n_steps=20,
     )
     trainer.datamodule_fold = fold
+    trainer.split_sha256 = split_hash
+    trainer.training_ids = train.image_id.tolist()
+    trainer.validation_ids = val.image_id.tolist()
     trainer.fit(model, train_loader, val_loader)
     print(f"Best {mode} fold {fold}: {checkpoint.best_model_score} at "
           f"{checkpoint.best_model_path}", flush=True)
@@ -103,6 +111,8 @@ def train_one(fold, mode, args):
     test_probs = predict(model, test_loader, torch.device("cuda"))
     np.savez_compressed(
         probabilities_file,
+        split_sha256=split_hash,
+        training_ids=train.image_id.to_numpy(dtype=str),
         validation_ids=val.image_id.to_numpy(dtype=str),
         validation_probs=val_probs,
         test_ids=test.image_id.to_numpy(dtype=str),
@@ -115,15 +125,15 @@ def train_one(fold, mode, args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--folds", nargs="+", type=int, default=[1, 2, 3, 4])
+    parser = argparse.ArgumentParser(description="Train folds with cleaned data")
+    parser.add_argument("--folds", nargs="+", type=int, default=[0, 1, 2, 3, 4])
     parser.add_argument("--mode", choices=["se", "cbam", "baseline"], default="se")
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--batch-size", type=int, default=48)
-    parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "oof")
+    parser.add_argument("--output-dir", type=Path, default=ROOT / "outputs" / "oof_clean")
     args = parser.parse_args()
-    if any(fold not in range(1, 5) for fold in args.folds):
-        parser.error("Only missing folds 1-4 can be trained here")
+    if any(fold not in range(5) for fold in args.folds):
+        parser.error("Folds must be 0-4")
     for fold in args.folds:
         train_one(fold, args.mode, args)
 

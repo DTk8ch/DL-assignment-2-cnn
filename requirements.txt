@@ -10,6 +10,7 @@ matplotlib
 scikit-learn
 jupyterlab
 ipykernel
+nbconvert
 iterative-stratification
 kaggle
 tqdm

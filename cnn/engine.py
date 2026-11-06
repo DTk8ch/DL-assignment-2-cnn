@@ -101,6 +101,10 @@ class PetClassifier(pl.LightningModule):
         self.val_f1 = torchmetrics.F1Score(task="multilabel", num_labels=5, average='macro')
         self.val_f1_per_class = torchmetrics.F1Score(task="multilabel", num_labels=5, average='none')
 
+    def on_save_checkpoint(self, checkpoint):
+        if hasattr(self, "split_metadata"):
+            checkpoint.update(self.split_metadata)
+
     def forward(self, x):
         features = self.backbone.forward_features(x)
 
@@ -142,7 +146,6 @@ class PetClassifier(pl.LightningModule):
         for i, class_name in enumerate(classes):
             self.log(f'val_f1_{class_name}', per_class_f1[i])
 
-        # Give the three rare identity classes their own equally weighted score.
         self.log('val_rare_macro_f1', per_class_f1[2:].mean())
 
         self.val_f1_per_class.reset()
