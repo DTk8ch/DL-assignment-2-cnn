@@ -206,7 +206,7 @@ def setup_trainer(mode, optimizer_pair="radam_plateau", max_epochs=10):
         monitor="val_macro_f1",
         mode="max",
         save_top_k=1,
-        filename="best-resnet34-{epoch:02d}-{val_macro_f1:.3f}"
+        filename=f"best-resnet34-{mode}-{optimizer_pair}-{{epoch:02d}}-{{val_macro_f1:.3f}}"
     )
 
     early_stop_callback = EarlyStopping(
@@ -216,12 +216,20 @@ def setup_trainer(mode, optimizer_pair="radam_plateau", max_epochs=10):
         verbose=True
     )
 
+    if torch.cuda.is_available() and torch.cuda.is_bf16_supported():
+        prec = "bf16-mixed"
+    elif torch.cuda.is_available():
+        prec = "16-mixed"
+    else:
+        prec = "32-true"
+
     trainer = pl.Trainer(
         logger=wandb_logger,
         callbacks=[checkpoint_callback, early_stop_callback],
         max_epochs=max_epochs,
-        accelerator="gpu",
+        accelerator="gpu" if torch.cuda.is_available() else "cpu",
         devices=1,
+        precision=prec,
         log_every_n_steps=10,
         fast_dev_run=False
     )

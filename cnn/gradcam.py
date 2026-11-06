@@ -89,8 +89,8 @@ def process_and_save(grad_cam, image_tensor, original_img, class_idx, class_name
     print(f"Saved: {output_path}")
 
 
-def run_gradcam(checkpoint_path, mode, output_dir, image_path=None, num_samples=5, target_class=None):
-    device = torch.device("cuda" if torch.cuda.is_available() else ("mps" if torch.backends.mps.is_available() else "cpu"))
+def run_gradcam(checkpoint_path, mode="baseline", output_dir="reports/gradcam", image_path=None, num_samples=5, target_class=None, run_name=None):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     labels = ["Cat", "Dog", "Moris", "Motya", "Biatrix"]
 
     model = PetClassifier.load_from_checkpoint(checkpoint_path, mode=mode, strict=False)
@@ -100,7 +100,8 @@ def run_gradcam(checkpoint_path, mode, output_dir, image_path=None, num_samples=
     target_layer = model.attention
     grad_cam = GradCAM(model, target_layer)
 
-    out_dir = Path(output_dir) / mode
+    sub_dir = run_name if run_name else mode
+    out_dir = Path(output_dir) / sub_dir
     out_dir.mkdir(parents=True, exist_ok=True)
 
     transform = transforms.Compose([

@@ -75,13 +75,15 @@ def get_dataloaders(fold_idx=0, batch_size=32, num_workers=4):
         batch_size=batch_size,
         shuffle=True,
         num_workers=num_workers,
-        persistent_workers=True)
+        pin_memory=torch.cuda.is_available(),
+        persistent_workers=bool(num_workers > 0))
 
     val_loader = DataLoader(
         val_dataset,
         batch_size=batch_size,
         shuffle=False,
         num_workers=num_workers,
-        persistent_workers=True)
+        pin_memory=torch.cuda.is_available(),
+        persistent_workers=bool(num_workers > 0))
 
     return train_loader, val_loader, pos_weights
